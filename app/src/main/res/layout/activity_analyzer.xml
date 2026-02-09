@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/playerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <com.example.golfswingapp.OverlayView
+        android:id="@+id/overlayView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 上部パネル：ナビ＋編集 -->
+    <LinearLayout
+        android:id="@+id/topPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:orientation="horizontal"
+        android:padding="10dp"
+        android:gravity="center_vertical"
+        android:background="#AA000000">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="戻る" />
+
+        <Button
+            android:id="@+id/btnHome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ホーム"
+            android:layout_marginLeft="8dp"/>
+
+        <!-- 右寄せにするためのスペーサー -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+
+        <Button
+            android:id="@+id/btnTransition"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="切り返し"
+            android:layout_marginLeft="8dp"/>
+
+        <Button
+            android:id="@+id/btnEdit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="編集OFF" />
+    </LinearLayout>
+
+    <!-- 下部パネル：再生・入力操作 -->
+    <LinearLayout
+        android:id="@+id/bottomPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:padding="10dp"
+        android:background="#AA000000">
+
+        <!-- 1段目：速度 + Undo -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btnSlower"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="遅く" />
+
+            <TextView
+                android:id="@+id/txtSpeed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0.25x"
+                android:textColor="#FFFFFF"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"/>
+
+            <Button
+                android:id="@+id/btnFaster"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="速く" />
+
+            <Button
+                android:id="@+id/btnUndo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Undo"
+                android:layout_marginLeft="12dp"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+
+</FrameLayout>

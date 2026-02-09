@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="GolfSwing Analyzer"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:paddingBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btnBackMode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="後方モード（ヘッド軌道）"
+        android:layout_marginTop="12dp"/>
+
+    <Button
+        android:id="@+id/btnFrontMode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="正面モード（肘角度・肩ライン）"
+        android:layout_marginTop="8dp"/>
+</LinearLayout>
