@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/trimRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/trimPlayerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 上：戻る＋タイトル -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:orientation="horizontal"
+        android:padding="10dp"
+        android:gravity="center_vertical"
+        android:background="#AA000000">
+
+        <Button
+            android:id="@+id/btnTrimBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="戻る" />
+
+        <TextView
+            android:id="@+id/txtTrimTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="尺を調整"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginLeft="12dp"/>
+    </LinearLayout>
+
+    <!-- 下：Start/End＋決定 -->
+    <LinearLayout
+        android:id="@+id/trimPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:background="#AA000000">
+
+        <!-- Start -->
+        <TextView
+            android:id="@+id/txtStart"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start: 0.00s"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+
+        <SeekBar
+            android:id="@+id/seekStart"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- End -->
+        <TextView
+            android:id="@+id/txtEnd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="End: 0.00s"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:layout_marginTop="8dp" />
+
+        <SeekBar
+            android:id="@+id/seekEnd"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- 現在位置＆決定 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="10dp">
+
+            <Button
+                android:id="@+id/btnJumpStart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Startへ" />
+
+            <Button
+                android:id="@+id/btnJumpEnd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Endへ"
+                android:layout_marginLeft="8dp"/>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <Button
+                android:id="@+id/btnGoAnalyze"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="この範囲で解析" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

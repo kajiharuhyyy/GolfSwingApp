@@ -3,6 +3,8 @@ package com.example.golfswingapp;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -15,6 +17,8 @@ import androidx.media3.ui.PlayerView;
 public class AnalyzerActivity extends AppCompatActivity {
 
     private ExoPlayer player;
+    private long startMs = 0L;
+    private long endMs = Long.MAX_VALUE;
     private final float[] SPEEDS = new float[]{0.05f, 0.1f, 0.25f, 0.5f, 1.0f, 1.5f, 2.0f};
     private int speedIndex = 2; // 0.25x（0.05,0.1の次）
     private boolean editMode = false;
@@ -22,36 +26,21 @@ public class AnalyzerActivity extends AppCompatActivity {
     private static final int AUTO_STEP_FRAMES = 5;
     private PlayerView playerView;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_analyzer);
 
-        String uriStr = getIntent().getStringExtra("videoUri");
-        String mode = getIntent().getStringExtra("mode");
+        startMs = getIntent().getLongExtra("startMs", 0L);
+        endMs   = getIntent().getLongExtra("endMs", Long.MAX_VALUE);
 
-        if (uriStr == null) {
-            finish();
-            return;
-        }
+        String uriStr = getIntent().getStringExtra("videoUri");
+        String mode   = getIntent().getStringExtra("mode");
+        if (uriStr == null) { finish(); return; }
 
         OverlayView overlayView = findViewById(R.id.overlayView);
-        if (!"BACK".equals(mode)) {
-            overlayView.setVisibility(View.GONE);
-        }
-
+        if (!"BACK".equals(mode)) overlayView.setVisibility(View.GONE);
         overlayView.setInputEnabled(false);
-
-        overlayView.setOnPointAddedListener((x, y) -> {
-            if (player == null) return;
-
-            overlayView.markImpactAsLast();
-
-            player.pause();
-            long pos = player.getCurrentPosition();
-            player.seekTo(pos + FRAME_MS * AUTO_STEP_FRAMES);
-        });
 
         Uri videoUri = Uri.parse(uriStr);
 
@@ -59,14 +48,50 @@ public class AnalyzerActivity extends AppCompatActivity {
         player = new ExoPlayer.Builder(this).build();
         playerView.setPlayer(player);
 
-
         player.setMediaItem(MediaItem.fromUri(videoUri));
         player.prepare();
+
+        // ★ここで範囲の頭へ
+        player.seekTo(startMs);
+
+        overlayView.setOnPointAddedListener((x, y) -> {
+            if (player == null) return;
+
+            // ※今は「点＝インパクト」になってる。必要ならボタンで分けよう。
+            overlayView.markImpactAsLast();
+
+            player.pause();
+            long pos = player.getCurrentPosition();
+            long next = Math.min(endMs, pos + FRAME_MS * AUTO_STEP_FRAMES);
+            player.seekTo(next);
+        });
 
         setupControls();
 
         player.play();
 
+        // ★監視スタートはここが安全
+        rangeHandler.post(rangeRunnable);
+    }
+
+    private final Handler rangeHandler = new Handler(Looper.getMainLooper());
+    private final Runnable rangeRunnable = new Runnable() {
+        @Override public void run() {
+            if (player == null) return;
+            long pos = player.getCurrentPosition();
+            if (pos >= endMs) {
+                player.pause();
+                player.seekTo(endMs);
+                saveSession();
+            } else {
+                rangeHandler.postDelayed(this, 33);
+            }
+        }
+    };
+
+    @Override protected void onStart() {
+        super.onStart();
+        rangeHandler.post(rangeRunnable);
     }
 
     private void setupControls() {
@@ -78,6 +103,8 @@ public class AnalyzerActivity extends AppCompatActivity {
         Button btnHome = findViewById(R.id.btnHome);
         Button btnTransition = findViewById(R.id.btnTransition);
         TextView txtSpeed = findViewById(R.id.txtSpeed);
+        Button btnSave = findViewById(R.id.btnSave);
+        Button btnImpact = findViewById(R.id.btnImpact);
 
         OverlayView overlayView = findViewById(R.id.overlayView);
 
@@ -121,6 +148,10 @@ public class AnalyzerActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
+        btnSave.setOnClickListener(v -> saveSession());
+
+        btnImpact.setOnClickListener(v -> overlayView.markImpactAsLast());
+
 
         player.addListener(new androidx.media3.common.Player.Listener() {
             @Override
@@ -137,12 +168,42 @@ public class AnalyzerActivity extends AppCompatActivity {
         txtSpeed.setText(s + "x");
     }
 
-    @Override
-    protected void onStop() {
+    @Override protected void onStop() {
+        rangeHandler.removeCallbacks(rangeRunnable);
         super.onStop();
-        if (player != null) {
-            player.release();
-            player = null;
+        if (player != null) { player.release(); player = null; }
+    }
+
+    private void saveSession() {
+        try {
+            OverlayView overlay = findViewById(R.id.overlayView);
+
+            org.json.JSONObject root = new org.json.JSONObject();
+            root.put("videoUri", getIntent().getStringExtra("videoUri"));
+            root.put("mode", getIntent().getStringExtra("mode"));
+            root.put("startMs", startMs);
+            root.put("endMs", endMs);
+            root.put("impactIndex", overlay.getImpactIndex());
+            root.put("transitionIndex", overlay.getTransitionIndex());
+
+            org.json.JSONArray arr = new org.json.JSONArray();
+            for (OverlayView.PointF p : overlay.getPoints()) {
+                org.json.JSONObject o = new org.json.JSONObject();
+                o.put("x", p.x);
+                o.put("y", p.y);
+                arr.put(o);
+            }
+            root.put("points", arr);
+
+            String fileName = "swing_" + System.currentTimeMillis() + ".json";
+            try (java.io.FileOutputStream fos = openFileOutput(fileName, MODE_PRIVATE)) {
+                fos.write(root.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+
+            android.widget.Toast.makeText(this, "保存しました: " + fileName, android.widget.Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            android.widget.Toast.makeText(this, "保存失敗: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
         }
     }
+
 }

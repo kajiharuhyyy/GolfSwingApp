@@ -103,14 +103,23 @@ public class OverlayView extends View {
             if (impactIndex >= points.size()) {
                 impactIndex = points.isEmpty() ? -1 : points.size() - 1;
             }
+
+            // ★追加：transitionIndexも追従
+            if (transitionIndex >= points.size()) {
+                transitionIndex = points.isEmpty() ? -1 : points.size() - 1;
+            }
+
             invalidate();
         }
     }
 
     public void clear() {
         points.clear();
+        impactIndex = -1;
+        transitionIndex = -1;
         invalidate();
     }
+
     public interface OnPointAddedListener {
         void onPointAdded(float x, float y);
     }
@@ -170,8 +179,6 @@ public class OverlayView extends View {
             }
         }
 
-
-
         // ここから下は今まで通り：点、インパクト表示、（必要ならスプラインも）
         for (PointF p : points) {
             canvas.drawCircle(p.x, p.y, 10f, pointPaint);
@@ -188,6 +195,19 @@ public class OverlayView extends View {
             canvas.drawCircle(p.x, p.y, 22f, ring);
             canvas.drawCircle(p.x, p.y, 14f, impactPaint);
         }
+
+        // 切り返しマーク（例：黄色のリング）
+        if (transitionIndex >= 0 && transitionIndex < points.size()) {
+            PointF t = points.get(transitionIndex);
+
+            Paint transRing = new Paint(Paint.ANTI_ALIAS_FLAG);
+            transRing.setStyle(Paint.Style.STROKE);
+            transRing.setStrokeWidth(8f);
+            transRing.setColor(0xFFFFD60A); // 黄
+
+            canvas.drawCircle(t.x, t.y, 22f, transRing);
+        }
+
     }
 
     @Override
@@ -214,4 +234,11 @@ public class OverlayView extends View {
         public final float y;
         public PointF(float x, float y) { this.x = x; this.y = y; }
     }
+
+    public List<PointF> getPoints() {
+        return new ArrayList<>(points);
+    }
+
+    public int getImpactIndex() { return impactIndex; }
+
 }
