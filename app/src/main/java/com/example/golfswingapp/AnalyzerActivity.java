@@ -174,12 +174,71 @@ public class AnalyzerActivity extends AppCompatActivity {
         if (player != null) { player.release(); player = null; }
     }
 
+    private Uri copyVideoToMovies(Uri srcUri, String displayName) throws Exception {
+        android.content.ContentResolver cr = getContentResolver();
+
+        android.content.ContentValues values = new android.content.ContentValues();
+        values.put(android.provider.MediaStore.Video.Media.DISPLAY_NAME, displayName);
+        values.put(android.provider.MediaStore.Video.Media.MIME_TYPE, "video/mp4");
+        values.put(android.provider.MediaStore.Video.Media.RELATIVE_PATH, "Movies/GolfSwing");
+
+        Uri dstUri = cr.insert(android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values);
+        if (dstUri == null) throw new IllegalStateException("MediaStore insert failed");
+
+        try (java.io.InputStream in = cr.openInputStream(srcUri);
+             java.io.OutputStream out = cr.openOutputStream(dstUri)) {
+
+            if (in == null || out == null) throw new IllegalStateException("Stream open failed");
+
+            byte[] buf = new byte[1024 * 1024]; // 1MB
+            int len;
+            while ((len = in.read(buf)) != -1) {
+                out.write(buf, 0, len);
+            }
+            out.flush();
+        }
+
+        return dstUri;
+    }
+
+    private Uri saveJsonToDocuments(String displayName, String json) throws Exception {
+        android.content.ContentResolver cr = getContentResolver();
+
+        android.content.ContentValues values = new android.content.ContentValues();
+        values.put(android.provider.MediaStore.Files.FileColumns.DISPLAY_NAME, displayName);
+        values.put(android.provider.MediaStore.Files.FileColumns.MIME_TYPE, "application/json");
+        values.put(android.provider.MediaStore.Files.FileColumns.RELATIVE_PATH, "Documents/GolfSwing");
+
+        Uri dstUri = cr.insert(android.provider.MediaStore.Files.getContentUri("external"), values);
+        if (dstUri == null) throw new IllegalStateException("MediaStore insert failed (json)");
+
+        try (java.io.OutputStream out = cr.openOutputStream(dstUri)) {
+            if (out == null) throw new IllegalStateException("OutputStream open failed (json)");
+            out.write(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            out.flush();
+        }
+
+        return dstUri;
+    }
+
     private void saveSession() {
         try {
             OverlayView overlay = findViewById(R.id.overlayView);
 
+            String originalUriStr = getIntent().getStringExtra("videoUri");
+            if (originalUriStr == null) throw new IllegalStateException("videoUri is null");
+            Uri originalUri = Uri.parse(originalUriStr);
+
+            long now = System.currentTimeMillis();
+            String videoName = "swing_" + now + ".mp4";
+            String jsonName  = "swing_" + now + ".json";
+
+            // 1) 動画をコピーして保存（Movies/GolfSwing）
+            Uri savedVideoUri = copyVideoToMovies(originalUri, videoName);
+
+            // 2) JSONを作る（videoUriは「コピーした先」を入れるのが重要！）
             org.json.JSONObject root = new org.json.JSONObject();
-            root.put("videoUri", getIntent().getStringExtra("videoUri"));
+            root.put("videoUri", savedVideoUri.toString()); // ★コピー先に差し替え
             root.put("mode", getIntent().getStringExtra("mode"));
             root.put("startMs", startMs);
             root.put("endMs", endMs);
@@ -195,13 +254,19 @@ public class AnalyzerActivity extends AppCompatActivity {
             }
             root.put("points", arr);
 
-            String fileName = "swing_" + System.currentTimeMillis() + ".json";
-            try (java.io.FileOutputStream fos = openFileOutput(fileName, MODE_PRIVATE)) {
-                fos.write(root.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            }
+            String jsonText = root.toString();
 
-            android.widget.Toast.makeText(this, "保存しました: " + fileName, android.widget.Toast.LENGTH_SHORT).show();
+            // 3) JSONも保存（Documents/GolfSwing）
+            Uri savedJsonUri = saveJsonToDocuments(jsonName, jsonText);
+
+            android.widget.Toast.makeText(
+                    this,
+                    "保存しました\n動画: Movies/GolfSwing/" + videoName + "\nJSON: Documents/GolfSwing/" + jsonName,
+                    android.widget.Toast.LENGTH_LONG
+            ).show();
+
         } catch (Exception e) {
+            android.util.Log.e("SAVE", "saveSession failed", e);
             android.widget.Toast.makeText(this, "保存失敗: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
         }
     }
