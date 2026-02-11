@@ -26,8 +26,68 @@ public class AnalyzerActivity extends AppCompatActivity {
     private static final int AUTO_STEP_FRAMES = 5;
     private PlayerView playerView;
 
+    private org.json.JSONObject readJsonFromUri(Uri uri) throws Exception {
+        try (java.io.InputStream in = getContentResolver().openInputStream(uri)) {
+            if (in == null) throw new IllegalStateException("openInputStream failed");
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = in.read(buf)) != -1) bos.write(buf, 0, len);
+            String text = bos.toString(java.nio.charset.StandardCharsets.UTF_8.name());
+            return new org.json.JSONObject(text);
+        }
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Uri sessionUri = getIntent().getParcelableExtra("sessionUri");
+        if (sessionUri != null) {
+            try {
+                org.json.JSONObject root = readJsonFromUri(sessionUri);
+
+                String videoUriStr = root.getString("videoUri");
+                startMs = root.optLong("startMs", 0L);
+                endMs = root.optLong("endMs", Long.MAX_VALUE);
+
+                // player 構築
+                playerView = findViewById(R.id.playerView);
+                player = new ExoPlayer.Builder(this).build();
+                playerView.setPlayer(player);
+                player.setMediaItem(MediaItem.fromUri(Uri.parse(videoUriStr)));
+                player.prepare();
+                player.seekTo(startMs);
+                player.play();
+
+                // overlay 復元
+                OverlayView overlay = findViewById(R.id.overlayView);
+                int impact = root.optInt("impactIndex", -1);
+                int transition = root.optInt("transitionIndex", -1);
+
+                java.util.List<OverlayView.PointF> pts = new java.util.ArrayList<>();
+                org.json.JSONArray arr = root.optJSONArray("points");
+                if (arr != null) {
+                    for (int i = 0; i < arr.length(); i++) {
+                        org.json.JSONObject o = arr.getJSONObject(i);
+                        pts.add(new OverlayView.PointF((float)o.getDouble("x"), (float)o.getDouble("y")));
+                    }
+                }
+                overlay.restore(pts, impact, transition);
+
+                // 編集はデフォOFF（閲覧用）
+                editMode = false;
+                overlay.setInputEnabled(false);
+
+                setupControls();
+                return; // ★復元ルートなのでここで終了
+            } catch (Exception e) {
+                android.util.Log.e("RESTORE", "restore failed", e);
+                android.widget.Toast.makeText(this, "復元失敗: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+        }
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_analyzer);
 

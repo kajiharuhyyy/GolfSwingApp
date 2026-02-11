@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
         Button btnBackMode = findViewById(R.id.btnBackMode);
         Button btnFrontMode = findViewById(R.id.btnFrontMode);
 
+
         btnBackMode.setOnClickListener(v -> {
             selectedMode = "BACK";
             showSourceChooser();

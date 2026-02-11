@@ -241,4 +241,23 @@ public class OverlayView extends View {
 
     public int getImpactIndex() { return impactIndex; }
 
+    public void restore(List<PointF> pts, int impact, int transition) {
+        points.clear();
+        if (pts != null) points.addAll(pts);
+        impactIndex = impact;
+        transitionIndex = transition;
+        invalidate();
+    }
+
+    public void setImpactIndex(int idx) {
+        impactIndex = idx;
+        invalidate();
+    }
+
+    public void setTransitionIndex(int idx) {
+        transitionIndex = idx;
+        invalidate();
+    }
+
+
 }
